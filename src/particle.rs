@@ -9,7 +9,8 @@ pub struct EntityPlugin;
 
 impl Plugin for EntityPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, gravity)
+        app.init_resource::<Particle>()
+            .add_systems(Update, gravity)
             .add_systems(Update, update_particle_position)
             .add_systems(Update, change_material)
             .add_systems(Update, collide_particles);
@@ -30,25 +31,25 @@ pub fn spawn_particle(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     amount: u64,
+    radius: f32,
 ) {
     let window = window_query.get_single().unwrap();
     for _ in 0..amount
     {
-        let r = 20.;
 
         let (hue, sat, li) = heatmap_color(0.);
         let random_x = random::<f32>() * window.width();
         let random_y = random::<f32>() * window.height();
-        let entity = Particle {
-            radius: r,
+        let entity = VelocityEntity {
             ..default()
         };
         let b = MaterialMesh2dBundle {
-            mesh: meshes.add(shape::Circle::new(entity.radius).into()).into(),
+            mesh: meshes.add(shape::Circle::new(radius).into()).into(),
             material: materials.add(ColorMaterial::from(Color::hsl(hue, sat, li))),
             transform: Transform::from_translation(Vec3::new(random_x, random_y, 0.)),
             ..default()
         };
+
         commands.spawn((
             b,
             entity,
@@ -56,10 +57,14 @@ pub fn spawn_particle(
     }
 }
 
-#[derive(Component, Debug)]
+#[derive(Component, Default, Debug)]
+pub struct VelocityEntity {
+    pub velocity: Vec3,
+}
+
+#[derive(Resource, Debug)]
 pub struct Particle {
     pub radius: f32,
-    pub velocity: Vec3,
     pub dampening: f32,
     pub mass: f32,
 }
@@ -68,7 +73,6 @@ impl Default for Particle {
     fn default() -> Self {
         Self {
             radius: 10.,
-            velocity: Vec3 { x: 0., y: 0., z: 0. },
             dampening: 0.9,
             mass: 1.,
         }
@@ -77,7 +81,7 @@ impl Default for Particle {
 
 pub fn gravity(
     simulation_state: Res<SimulationState>,
-    mut entity_query: Query<(&mut Particle)>,
+    mut entity_query: Query<(&mut VelocityEntity)>,
     physic_rules: Res<PhysicRules>,
     time: Res<Time>,
 ) {
@@ -90,7 +94,7 @@ pub fn gravity(
 }
 
 pub fn update_particle_position(
-    mut entity_query: Query<(&mut Transform, &Particle)>,
+    mut entity_query: Query<(&mut Transform, &VelocityEntity)>,
     simulation_state: Res<SimulationState>,
     time: Res<Time>,
 ) {
@@ -103,7 +107,7 @@ pub fn update_particle_position(
 }
 
 fn change_material(
-    enemies: Query<(&Handle<ColorMaterial>, &Particle)>,
+    enemies: Query<(&Handle<ColorMaterial>, &VelocityEntity)>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for (handle, part) in enemies.iter() {
@@ -121,7 +125,7 @@ fn change_material(
 
 pub fn draw_vector(
     mut gizmos: Gizmos,
-    mut entity_query: Query<(&Transform, &Particle)>,
+    mut entity_query: Query<(&Transform, &VelocityEntity)>,
 ) {
     for (tran, entity) in entity_query.iter() {
         gizmos.line(tran.translation, tran.translation + entity.velocity, Color::RED);
@@ -129,9 +133,9 @@ pub fn draw_vector(
 }
 
 pub fn collide_particles(
-    mut gizmos: Gizmos,
     simulation_state: Res<SimulationState>,
-    mut entity_query: Query<(&mut Transform, &mut Particle)>) {
+    particle: Res<Particle>,
+    mut entity_query: Query<(&mut Transform, &mut VelocityEntity)>) {
     if simulation_state.freeze {
         return;
     }
@@ -140,29 +144,24 @@ pub fn collide_particles(
     while let Some([(mut tran_a, mut enti_a),
                    (mut tran_b, mut enti_b)]) = combinations.fetch_next() {
         let dist = tran_a.translation.distance(tran_b.translation);
-        let delta = enti_a.radius + enti_a.radius - dist;
+        let delta = 2.*particle.radius - dist;
         if delta > 0.0 {
             let direction = (tran_a.translation - tran_b.translation).normalize();
             tran_a.translation += direction * delta / 2.;
             tran_b.translation -= direction * delta / 2.;
 
             let v_a = enti_a.velocity;
-            let m_a = enti_a.mass;
+            let m_a = particle.mass;
             let v_b = enti_b.velocity;
-            let m_b = 1.;
+            let m_b = particle.mass;
 
             let va_n = v_a.project_onto(-direction);
             let va_t = v_a - va_n;
             let vb_n = v_b.project_onto(direction);
             let vb_t = v_b - vb_n;
 
-            // gizmos.line(tran_a.translation, tran_a.translation + va_n, Color::BLUE);
-            // gizmos.line(tran_a.translation, tran_a.translation + va_t, Color::GREEN);
-            // gizmos.line(tran_b.translation, tran_b.translation + vb_n, Color::BLUE);
-            // gizmos.line(tran_b.translation, tran_b.translation + vb_t, Color::GREEN);
-
-            let va_n_new = (m_a * va_n + m_b * (2. * vb_n - va_n)) / (m_a + m_b) * enti_a.dampening;
-            let vb_n_new = (m_b * vb_n + m_a * (2. * va_n - vb_n)) / (m_a + m_b) * enti_b.dampening;
+            let va_n_new = (m_a * va_n + m_b * (2. * vb_n - va_n)) / (m_a + m_b) * particle.dampening;
+            let vb_n_new = (m_b * vb_n + m_a * (2. * va_n - vb_n)) / (m_a + m_b) * particle.dampening;
 
             enti_a.velocity = va_n_new + va_t;
             enti_b.velocity = vb_n_new + vb_t;

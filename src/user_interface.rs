@@ -9,6 +9,7 @@ use bevy::{
     app::App,
 };
 use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiSettings};
+use crate::particle::Particle;
 use crate::resources::{PhysicRules, SimulationState, SimulationTrigger};
 
 pub struct UserInterfacePlugin;
@@ -55,6 +56,7 @@ fn draw_ui(
     mut ui_state: ResMut<UIState>,
     mut sim_state: ResMut<SimulationState>,
     mut phy_rules: ResMut<PhysicRules>,
+    mut particle: ResMut<Particle>,
     // You are not required to store Egui texture ids in systems. We store this one here just to
     // demonstrate that rendering by using a texture id of a removed image is handled without
     // making bevy_egui panic.
@@ -84,6 +86,7 @@ fn draw_ui(
             ui.add(egui::Slider::new(&mut phy_rules.gravity.x, min..=max).text("gravity x"));
             ui.add(egui::Slider::new(&mut phy_rules.gravity.y, min..=max).text("gravity y"));
             ui.add(egui::Slider::new(&mut phy_rules.gravity.z, min..=max).text("gravity z"));
+            ui.add(egui::Slider::new(&mut particle.dampening, 0.0..=1.).text("dampening"));
         });
 }
 
