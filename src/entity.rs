@@ -11,7 +11,8 @@ impl Plugin for EntityPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, gravity)
             .add_systems(Update, update_particle_position)
-            .add_systems(Update, change_material);
+            .add_systems(Update, change_material)
+            .add_systems(Update, collide_particles);
     }
 }
 
@@ -111,3 +112,39 @@ pub fn draw_vector(
     }
 }
 
+pub fn collide_particles(
+    mut gizmos: Gizmos,
+    mut entity_query: Query<(&mut Transform, &mut Particle)>) {
+    let mut combinations = entity_query.iter_combinations_mut();
+    while let Some([(mut tran_a, mut enti_a),
+                   (mut tran_b, mut enti_b)]) = combinations.fetch_next() {
+        let dist = tran_a.translation.distance(tran_b.translation);
+        let delta = enti_a.radius + enti_a.radius - dist;
+        if delta > 0.0 {
+            let direction = (tran_a.translation - tran_b.translation).normalize();
+            tran_a.translation += direction * delta / 2.;
+            tran_b.translation -= direction * delta / 2.;
+
+            let v_a = enti_a.velocity;
+            let m_a = 1.;
+            let v_b = enti_b.velocity;
+            let m_b = 1.;
+
+            let va_n = v_a.project_onto(-direction);
+            let va_t = v_a - va_n;
+            let vb_n = v_b.project_onto(direction);
+            let vb_t = v_b - vb_n;
+
+            // gizmos.line(tran_a.translation, tran_a.translation + va_n, Color::BLUE);
+            // gizmos.line(tran_a.translation, tran_a.translation + va_t, Color::GREEN);
+            // gizmos.line(tran_b.translation, tran_b.translation + vb_n, Color::BLUE);
+            // gizmos.line(tran_b.translation, tran_b.translation + vb_t, Color::GREEN);
+
+            let va_n_new = (m_a * va_n + m_b * (2. * vb_n - va_n)) / (m_a + m_b);
+            let vb_n_new = (m_b * vb_n + m_a * (2. * va_n - vb_n)) / (m_a + m_b);
+
+            enti_a.velocity = va_n_new + va_t;
+            enti_b.velocity = vb_n_new + vb_t;
+        }
+    }
+}
