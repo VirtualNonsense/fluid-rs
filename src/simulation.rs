@@ -1,7 +1,7 @@
 use bevy::app::App;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use crate::entity::{Particle, spawn_particle};
+use crate::particle::{Particle, spawn_particle};
 use crate::resources::*;
 
 pub struct SimulationPlugin;
@@ -60,18 +60,18 @@ pub fn constrain_particle_in_window(
         let lower_y = trans.translation.y - entity.radius;
         let upper_y = trans.translation.y + entity.radius;
         if upper_y > height {
-            entity.velocity.y = -1. * entity.velocity.y.abs();
+            entity.velocity.y = -1. * entity.velocity.y.abs() * entity.dampening;
             trans.translation.y = height - entity.radius;
         } else if lower_y < 0.0 {
-            entity.velocity.y = entity.velocity.y.abs();
+            entity.velocity.y = entity.velocity.y.abs() * entity.dampening;
             trans.translation.y = entity.radius;
         }
         if upper_x > width {
-            entity.velocity.x = entity.velocity.x.abs() * -1.;
+            entity.velocity.x = entity.velocity.x.abs() * -1. * entity.dampening;
             trans.translation.x = width - entity.radius;
         } else if lower_x < 0.0 {
             trans.translation.x = entity.radius;
-            entity.velocity.x = entity.velocity.x.abs();
+            entity.velocity.x = entity.velocity.x.abs() * entity.dampening;
         }
     }
 }

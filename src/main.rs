@@ -1,4 +1,4 @@
-mod entity;
+
 mod camera;
 mod particle;
 mod user_interface;
@@ -10,7 +10,7 @@ use bevy::{
     winit::WinitSettings,
 };
 
-use crate::entity::EntityPlugin;
+use crate::particle::EntityPlugin;
 use crate::camera::CameraPlugin;
 use crate::resources::ResourcePlugin;
 use crate::simulation::SimulationPlugin;

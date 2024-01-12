@@ -55,7 +55,7 @@ fn draw_ui(
         .default_width(200.0)
         .resizable(true)
         .show(ctx, |ui| {
-            ui.checkbox(&mut sim_state.freeze, "Simulation in progress");
+            ui.checkbox(&mut sim_state.freeze, "Freeze");
             if ui.button("Reset simulation").clicked() {
                 if !sim_state.trigger.contains(&SimulationTrigger::Reset) {
                     sim_state.trigger.push(SimulationTrigger::Reset);
