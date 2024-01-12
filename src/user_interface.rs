@@ -21,12 +21,24 @@ impl Plugin for UserInterfacePlugin {
             .add_systems(Startup, initialize_user_interface)
             .add_systems(Startup, initialize_ui_state)
             .add_systems(Update, draw_ui)
+            .add_systems(Update, update_menu_state)
         ;
     }
 }
 
 #[derive(Default, Debug, Resource)]
-struct UIState;
+struct UIState{
+    show_menu: bool,
+}
+
+fn update_menu_state(
+    keyboard_input: Res<Input<KeyCode>>,
+    mut ui_state: ResMut<UIState>
+){
+    if keyboard_input.just_pressed(KeyCode::Slash){
+        ui_state.show_menu = !ui_state.show_menu;
+    }
+}
 
 fn initialize_user_interface(mut contexts: EguiContexts) {
     contexts.ctx_mut().set_visuals(egui::Visuals {
@@ -50,6 +62,9 @@ fn draw_ui(
     mut is_initialized: Local<bool>,
     mut contexts: EguiContexts,
 ) {
+    if !ui_state.show_menu{
+        return;
+    }
     let ctx = contexts.ctx_mut();
     egui::SidePanel::left("side_panel")
         .default_width(200.0)
