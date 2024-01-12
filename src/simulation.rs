@@ -1,7 +1,7 @@
 use bevy::app::App;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use crate::entity::spawn_particle;
+use crate::entity::{Particle, spawn_particle};
 use crate::resources::*;
 
 pub struct SimulationPlugin;
@@ -9,6 +9,7 @@ pub struct SimulationPlugin;
 impl Plugin for SimulationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, handle_simulation_trigger);
+        app.add_systems(Update, constrain_particle_in_window);
     }
 }
 
@@ -42,4 +43,35 @@ fn handle_simulation_trigger(
     }
     let len = sim_state.trigger.len();
     sim_state.trigger.drain(0..len);
+}
+pub fn constrain_particle_in_window(
+    mut entity_query: Query<(&mut Transform, &mut Particle)>,
+    window_query: Query<&Window, With<PrimaryWindow>>,
+) {
+    // dbg!("updating constraint");
+    let window = window_query.get_single().unwrap();
+    let width = window.width();
+    let height = window.height();
+    for (mut trans, mut entity) in entity_query.iter_mut() {
+
+        // dbg!(&entity.velocity);
+        let lower_x = trans.translation.x - entity.radius;
+        let upper_x = trans.translation.x + entity.radius;
+        let lower_y = trans.translation.y - entity.radius;
+        let upper_y = trans.translation.y + entity.radius;
+        if upper_y > height {
+            entity.velocity.y = -1. * entity.velocity.y.abs();
+            trans.translation.y = height - entity.radius;
+        } else if lower_y < 0.0 {
+            entity.velocity.y = entity.velocity.y.abs();
+            trans.translation.y = entity.radius;
+        }
+        if upper_x > width {
+            entity.velocity.x = entity.velocity.x.abs() * -1.;
+            trans.translation.x = width - entity.radius;
+        } else if lower_x < 0.0 {
+            trans.translation.x = entity.radius;
+            entity.velocity.x = entity.velocity.x.abs();
+        }
+    }
 }
