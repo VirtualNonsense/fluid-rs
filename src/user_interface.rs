@@ -10,7 +10,7 @@ use bevy::{
 };
 use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiSettings};
 use crate::particle::Particle;
-use crate::resources::{PhysicRules, SimulationState, SimulationTrigger};
+use crate::resources::{ PhysicRules, SimulationState, SimulationTrigger};
 
 pub struct UserInterfacePlugin;
 
@@ -27,16 +27,24 @@ impl Plugin for UserInterfacePlugin {
     }
 }
 
-#[derive(Default, Debug, Resource)]
-struct UIState{
+#[derive(Debug, Resource)]
+struct UIState {
     show_menu: bool,
+}
+
+impl Default for UIState {
+    fn default() -> Self {
+        Self {
+            show_menu: true
+        }
+    }
 }
 
 fn update_menu_state(
     keyboard_input: Res<Input<KeyCode>>,
-    mut ui_state: ResMut<UIState>
-){
-    if keyboard_input.just_pressed(KeyCode::Slash){
+    mut ui_state: ResMut<UIState>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Slash) {
         ui_state.show_menu = !ui_state.show_menu;
     }
 }
@@ -57,14 +65,9 @@ fn draw_ui(
     mut sim_state: ResMut<SimulationState>,
     mut phy_rules: ResMut<PhysicRules>,
     mut particle: ResMut<Particle>,
-    // You are not required to store Egui texture ids in systems. We store this one here just to
-    // demonstrate that rendering by using a texture id of a removed image is handled without
-    // making bevy_egui panic.
-    mut rendered_texture_id: Local<egui::TextureId>,
-    mut is_initialized: Local<bool>,
     mut contexts: EguiContexts,
 ) {
-    if !ui_state.show_menu{
+    if !ui_state.show_menu {
         return;
     }
     let ctx = contexts.ctx_mut();
@@ -87,6 +90,9 @@ fn draw_ui(
             ui.add(egui::Slider::new(&mut phy_rules.gravity.y, min..=max).text("gravity y"));
             ui.add(egui::Slider::new(&mut phy_rules.gravity.z, min..=max).text("gravity z"));
             ui.add(egui::Slider::new(&mut particle.dampening, 0.0..=1.).text("dampening"));
+            if ui.add(egui::Slider::new(&mut particle.radius, 0.1..=20.).text("radius")).changed() {
+                sim_state.trigger.push(SimulationTrigger::ChangeParticleScale(particle.radius));
+            };
         });
 }
 

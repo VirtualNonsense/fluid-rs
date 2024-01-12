@@ -36,11 +36,11 @@ pub fn spawn_particle(
     let window = window_query.get_single().unwrap();
     for _ in 0..amount
     {
-
         let (hue, sat, li) = heatmap_color(0.);
         let random_x = random::<f32>() * window.width();
         let random_y = random::<f32>() * window.height();
         let entity = VelocityEntity {
+            original_radius: radius,
             ..default()
         };
         let b = MaterialMesh2dBundle {
@@ -60,6 +60,7 @@ pub fn spawn_particle(
 #[derive(Component, Default, Debug)]
 pub struct VelocityEntity {
     pub velocity: Vec3,
+    pub original_radius: f32,
 }
 
 #[derive(Resource, Debug)]
@@ -144,7 +145,7 @@ pub fn collide_particles(
     while let Some([(mut tran_a, mut enti_a),
                    (mut tran_b, mut enti_b)]) = combinations.fetch_next() {
         let dist = tran_a.translation.distance(tran_b.translation);
-        let delta = 2.*particle.radius - dist;
+        let delta = 2. * particle.radius - dist;
         if delta > 0.0 {
             let direction = (tran_a.translation - tran_b.translation).normalize();
             tran_a.translation += direction * delta / 2.;

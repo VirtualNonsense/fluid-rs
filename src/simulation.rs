@@ -16,23 +16,39 @@ impl Plugin for SimulationPlugin {
 fn handle_simulation_trigger(
     particle: Res<Particle>,
     mut sim_state: ResMut<SimulationState>,
-    commands: Commands,
+    mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
+    mut query: Query<(Entity, &mut Transform, &VelocityEntity, &Handle<ColorMaterial>)>,
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let mut particle_count: u64 = 0;
+    let mut delete = false;
     for trig in &sim_state.trigger {
         match trig {
             SimulationTrigger::Reset => {
                 println!("resetting simulation");
+                delete = true;
             }
             SimulationTrigger::AddParticle => {
                 println!("adding a new particle");
                 particle_count += 1;
             }
+            SimulationTrigger::ChangeParticleScale(new_r) => {
+                for (_entity, mut t, vel, _co) in query.iter_mut() {
+                    t.scale.x = new_r / vel.original_radius;
+                    t.scale.y = new_r / vel.original_radius;
+                }
+            }
         }
     }
+    if delete {
+        for (entity, _t, _vel, _co) in query.iter() {
+            commands.entity(entity).remove::<VelocityEntity>();
+            commands.entity(entity).remove::<Handle<ColorMaterial>>();
+        }
+    }
+
     if particle_count > 0 {
         spawn_particle(
             commands,
