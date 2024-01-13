@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy::sprite::{Material2d, MaterialMesh2dBundle, Mesh2d};
+use bevy::sprite::MaterialMesh2dBundle;
 use bevy::window::PrimaryWindow;
 use rand::random;
 use crate::resources::{PhysicRules, SimulationState};

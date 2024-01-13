@@ -30,9 +30,9 @@ fn handle_simulation_trigger(
                 println!("resetting simulation");
                 delete = true;
             }
-            SimulationTrigger::AddParticle => {
+            SimulationTrigger::AddParticle(amount) => {
                 println!("adding a new particle");
-                particle_count += 1;
+                particle_count += *amount;
             }
             SimulationTrigger::ChangeParticleScale(new_r) => {
                 for (_entity, mut t, vel, _co) in query.iter_mut() {

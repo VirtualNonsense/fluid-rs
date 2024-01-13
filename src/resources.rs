@@ -21,7 +21,7 @@ impl Default for PhysicRules {
 #[derive(PartialEq, Debug)]
 pub enum SimulationTrigger {
     Reset,
-    AddParticle,
+    AddParticle(u64),
     ChangeParticleScale(f32),
 }
 

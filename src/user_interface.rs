@@ -30,12 +30,14 @@ impl Plugin for UserInterfacePlugin {
 #[derive(Debug, Resource)]
 struct UIState {
     show_menu: bool,
+    spawn_counter: u64,
 }
 
 impl Default for UIState {
     fn default() -> Self {
         Self {
-            show_menu: true
+            show_menu: true,
+            spawn_counter: 0
         }
     }
 }
@@ -82,13 +84,14 @@ fn draw_ui(
                 }
             };
             if ui.button("Add Particle").clicked() {
-                sim_state.trigger.push(SimulationTrigger::AddParticle);
+                sim_state.trigger.push(SimulationTrigger::AddParticle(ui_state.spawn_counter));
             }
+            ui.add(egui::Slider::new(&mut ui_state.spawn_counter, 1..=500).text("particles"));
             let max = 10.;
             let min = -10.;
             ui.add(egui::Slider::new(&mut phy_rules.gravity.x, min..=max).text("gravity x"));
             ui.add(egui::Slider::new(&mut phy_rules.gravity.y, min..=max).text("gravity y"));
-            ui.add(egui::Slider::new(&mut phy_rules.gravity.z, min..=max).text("gravity z"));
+            // ui.add(egui::Slider::new(&mut phy_rules.gravity.z, min..=max).text("gravity z"));
             ui.add(egui::Slider::new(&mut particle.dampening, 0.0..=1.).text("dampening"));
             if ui.add(egui::Slider::new(&mut particle.radius, 0.1..=20.).text("radius")).changed() {
                 sim_state.trigger.push(SimulationTrigger::ChangeParticleScale(particle.radius));
