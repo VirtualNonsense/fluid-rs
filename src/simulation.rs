@@ -1,7 +1,7 @@
 use bevy::app::App;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use crate::particle::{Particle, spawn_particle, VelocityEntity};
+use crate::particle::{Particle, spawn_particle, ParticleEntity};
 use crate::resources::*;
 
 pub struct SimulationPlugin;
@@ -18,7 +18,7 @@ fn handle_simulation_trigger(
     mut sim_state: ResMut<SimulationState>,
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
-    mut query: Query<(Entity, &mut Transform, &VelocityEntity, &Handle<ColorMaterial>)>,
+    mut query: Query<(Entity, &mut Transform, &ParticleEntity, &Handle<ColorMaterial>)>,
     meshes: ResMut<Assets<Mesh>>,
     materials: ResMut<Assets<ColorMaterial>>,
 ) {
@@ -44,7 +44,7 @@ fn handle_simulation_trigger(
     }
     if delete {
         for (entity, _t, _vel, _co) in query.iter() {
-            commands.entity(entity).remove::<VelocityEntity>();
+            commands.entity(entity).remove::<ParticleEntity>();
             commands.entity(entity).remove::<Handle<ColorMaterial>>();
         }
     }
@@ -65,7 +65,7 @@ fn handle_simulation_trigger(
 
 pub fn constrain_particle_in_window(
     particle: Res<Particle>,
-    mut entity_query: Query<(&mut Transform, &mut VelocityEntity)>,
+    mut entity_query: Query<(&mut Transform, &mut ParticleEntity)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
     // dbg!("updating constraint");

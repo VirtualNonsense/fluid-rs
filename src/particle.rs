@@ -39,7 +39,7 @@ pub fn spawn_particle(
         let (hue, sat, li) = heatmap_color(0.);
         let random_x = random::<f32>() * window.width();
         let random_y = random::<f32>() * window.height();
-        let entity = VelocityEntity {
+        let entity = ParticleEntity {
             original_radius: radius,
             ..default()
         };
@@ -58,7 +58,7 @@ pub fn spawn_particle(
 }
 
 #[derive(Component, Default, Debug)]
-pub struct VelocityEntity {
+pub struct ParticleEntity {
     pub velocity: Vec3,
     pub original_radius: f32,
 }
@@ -82,7 +82,7 @@ impl Default for Particle {
 
 pub fn gravity(
     simulation_state: Res<SimulationState>,
-    mut entity_query: Query<(&mut VelocityEntity)>,
+    mut entity_query: Query<(&mut ParticleEntity)>,
     physic_rules: Res<PhysicRules>,
     time: Res<Time>,
 ) {
@@ -95,7 +95,7 @@ pub fn gravity(
 }
 
 pub fn update_particle_position(
-    mut entity_query: Query<(&mut Transform, &VelocityEntity)>,
+    mut entity_query: Query<(&mut Transform, &ParticleEntity)>,
     simulation_state: Res<SimulationState>,
     time: Res<Time>,
 ) {
@@ -108,7 +108,7 @@ pub fn update_particle_position(
 }
 
 fn change_material(
-    enemies: Query<(&Handle<ColorMaterial>, &VelocityEntity)>,
+    enemies: Query<(&Handle<ColorMaterial>, &ParticleEntity)>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for (handle, part) in enemies.iter() {
@@ -126,7 +126,7 @@ fn change_material(
 
 pub fn draw_vector(
     mut gizmos: Gizmos,
-    mut entity_query: Query<(&Transform, &VelocityEntity)>,
+    mut entity_query: Query<(&Transform, &ParticleEntity)>,
 ) {
     for (tran, entity) in entity_query.iter() {
         gizmos.line(tran.translation, tran.translation + entity.velocity, Color::RED);
@@ -136,7 +136,7 @@ pub fn draw_vector(
 pub fn collide_particles(
     simulation_state: Res<SimulationState>,
     particle: Res<Particle>,
-    mut entity_query: Query<(&mut Transform, &mut VelocityEntity)>) {
+    mut entity_query: Query<(&mut Transform, &mut ParticleEntity)>) {
     if simulation_state.freeze {
         return;
     }
