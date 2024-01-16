@@ -57,12 +57,14 @@ pub fn spawn_particle(
     }
 }
 
+/// This struct represents a single particle
 #[derive(Component, Default, Debug)]
 pub struct ParticleEntity {
     pub velocity: Vec3,
     pub original_radius: f32,
 }
 
+/// This struct contains all parameter of a certain particle type.
 #[derive(Resource, Debug)]
 pub struct Particle {
     pub radius: f32,
