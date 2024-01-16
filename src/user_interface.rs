@@ -8,9 +8,10 @@ use bevy::{
     winit::WinitSettings,
     app::App,
 };
+use bevy::math::vec3;
 use bevy_egui::{egui, EguiContexts, EguiPlugin, EguiSettings};
 use crate::particle::Particle;
-use crate::resources::{ PhysicRules, SimulationState, SimulationTrigger};
+use crate::resources::{PhysicRules, SimulationState, SimulationCommands};
 
 pub struct UserInterfacePlugin;
 
@@ -37,7 +38,7 @@ impl Default for UIState {
     fn default() -> Self {
         Self {
             show_menu: true,
-            spawn_counter: 0
+            spawn_counter: 0,
         }
     }
 }
@@ -64,10 +65,11 @@ fn initialize_ui_state(mut ui_state: ResMut<UIState>) {
 
 fn draw_ui(
     mut ui_state: ResMut<UIState>,
-    mut sim_state: ResMut<SimulationState>,
-    mut phy_rules: ResMut<PhysicRules>,
-    mut particle: ResMut<Particle>,
     mut contexts: EguiContexts,
+
+    mut sim_state: ResMut<SimulationState>,
+    physic_rules: Res<PhysicRules>,
+    particle: Res<Particle>,
 ) {
     if !ui_state.show_menu {
         return;
@@ -77,25 +79,45 @@ fn draw_ui(
         .default_width(200.0)
         .resizable(true)
         .show(ctx, |ui| {
+
             ui.checkbox(&mut sim_state.freeze, "Freeze");
+
+
             if ui.button("Reset simulation").clicked() {
-                if !sim_state.trigger.contains(&SimulationTrigger::Reset) {
-                    sim_state.trigger.push(SimulationTrigger::Reset);
+                if !sim_state.commands.contains(&SimulationCommands::DeleteAllParticles) {
+                    sim_state.commands.push(SimulationCommands::DeleteAllParticles);
                 }
             };
             if ui.button("Add Particle").clicked() {
-                sim_state.trigger.push(SimulationTrigger::AddParticle(ui_state.spawn_counter));
+                sim_state.commands.push(SimulationCommands::AddParticle(ui_state.spawn_counter));
             }
             ui.add(egui::Slider::new(&mut ui_state.spawn_counter, 1..=500).text("particles"));
             let max = 10.;
             let min = -10.;
-            ui.add(egui::Slider::new(&mut phy_rules.gravity.x, min..=max).text("gravity x"));
-            ui.add(egui::Slider::new(&mut phy_rules.gravity.y, min..=max).text("gravity y"));
-            // ui.add(egui::Slider::new(&mut phy_rules.gravity.z, min..=max).text("gravity z"));
-            ui.add(egui::Slider::new(&mut particle.dampening, 0.0..=1.).text("dampening"));
-            if ui.add(egui::Slider::new(&mut particle.radius, 0.1..=20.).text("radius")).changed() {
-                sim_state.trigger.push(SimulationTrigger::ChangeParticleScale(particle.radius));
+            let mut gravity = physic_rules.gravity;
+            let mut gravity_changed = false;
+            let mut dampening = particle.dampening;
+            let mut radius = particle.radius;
+            let mut mass = particle.mass;
+            if ui.add(egui::Slider::new(&mut gravity.x, min..=max).text("gravity x")).changed() {
+                gravity_changed = true;
             };
+            if ui.add(egui::Slider::new(&mut gravity.y, min..=max).text("gravity y")).changed() {
+                gravity_changed = true;
+            };
+            if gravity_changed {
+                sim_state.commands.push(SimulationCommands::ChangeGravity(gravity));
+            }
+
+            if ui.add(egui::Slider::new(&mut dampening, 0.0..=1.).text("dampening")).changed() {
+                sim_state.commands.push(SimulationCommands::ChangeParticleDampening(dampening));
+            };
+            if ui.add(egui::Slider::new(&mut radius, 0.1..=20.).text("radius")).changed() {
+                sim_state.commands.push(SimulationCommands::ChangeParticleScale(radius));
+            };
+            if ui.add(egui::Slider::new(&mut mass, 0.1..=200.).text("mass")).changed(){
+                sim_state.commands.push(SimulationCommands::ChangeParticleMass(mass));
+            }
         });
 }
 

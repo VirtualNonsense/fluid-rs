@@ -8,15 +8,16 @@ pub struct SimulationPlugin;
 
 impl Plugin for SimulationPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, handle_simulation_trigger);
+        app.add_systems(Update, handle_simulation_commands);
         app.add_systems(Update, constrain_particle_in_window);
     }
 }
 
-fn handle_simulation_trigger(
-    particle: Res<Particle>,
-    mut sim_state: ResMut<SimulationState>,
+fn handle_simulation_commands(
     mut commands: Commands,
+    mut sim_state: ResMut<SimulationState>,
+    mut particle: ResMut<Particle>,
+    mut physic_rules: ResMut<PhysicRules>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     mut query: Query<(Entity, &mut Transform, &ParticleEntity, &Handle<ColorMaterial>)>,
     meshes: ResMut<Assets<Mesh>>,
@@ -24,21 +25,36 @@ fn handle_simulation_trigger(
 ) {
     let mut particle_count: u64 = 0;
     let mut delete = false;
-    for trig in &sim_state.trigger {
-        match trig {
-            SimulationTrigger::Reset => {
-                println!("resetting simulation");
+    for command in &sim_state.commands {
+        match command {
+            SimulationCommands::DeleteAllParticles => {
+                println!("deleting all particle");
                 delete = true;
             }
-            SimulationTrigger::AddParticle(amount) => {
-                println!("adding a new particle");
+            SimulationCommands::AddParticle(amount) => {
+                if *amount > 1 {
+                    println!("adding {} new particle!", amount);
+                } else {
+                    println!("adding a new particle!");
+                }
                 particle_count += *amount;
             }
-            SimulationTrigger::ChangeParticleScale(new_r) => {
+            SimulationCommands::ChangeParticleScale(new_r) => {
                 for (_entity, mut t, vel, _co) in query.iter_mut() {
                     t.scale.x = new_r / vel.original_radius;
                     t.scale.y = new_r / vel.original_radius;
+
                 }
+                particle.radius = *new_r;
+            }
+            SimulationCommands::ChangeGravity(grav) => {
+                physic_rules.gravity = *grav;
+            }
+            SimulationCommands::ChangeParticleMass(mass) => {
+                particle.mass = *mass;
+            }
+            SimulationCommands::ChangeParticleDampening(damp) => {
+                particle.dampening = *damp;
             }
         }
     }
@@ -59,8 +75,8 @@ fn handle_simulation_trigger(
             particle.radius,
         );
     }
-    let len = sim_state.trigger.len();
-    sim_state.trigger.drain(0..len);
+    let len = sim_state.commands.len();
+    sim_state.commands.drain(0..len);
 }
 
 pub fn constrain_particle_in_window(

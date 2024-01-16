@@ -19,23 +19,26 @@ impl Default for PhysicRules {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum SimulationTrigger {
-    Reset,
+pub enum SimulationCommands {
+    DeleteAllParticles,
     AddParticle(u64),
     ChangeParticleScale(f32),
+    ChangeGravity(Vec3),
+    ChangeParticleMass(f32),
+    ChangeParticleDampening(f32),
 }
 
 #[derive(Debug, Resource)]
 pub struct SimulationState {
     pub freeze: bool,
-    pub trigger: Vec<SimulationTrigger>,
+    pub commands: Vec<SimulationCommands>,
 }
 
 impl Default for SimulationState {
     fn default() -> Self {
         Self {
             freeze: false,
-            trigger: vec![],
+            commands: vec![],
         }
     }
 }
