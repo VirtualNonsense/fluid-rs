@@ -84,15 +84,14 @@ pub fn constrain_particle_in_window(
     mut entity_query: Query<(&mut Transform, &mut ParticleEntity)>,
     window_query: Query<&Window, With<PrimaryWindow>>,
 ) {
-    // dbg!("updating constraint");
     let window = window_query.get_single().unwrap();
-    let width = window.width();
-    let height = window.height();
+    let width = window.width()/2.;
+    let height = window.height()/2.;
     let radius = particle.radius;
     let dampening = particle.dampening;
+    let new_y_pos = height - radius;
+    let new_x_pos = width - radius;
     for (mut trans, mut entity) in entity_query.iter_mut() {
-
-        // dbg!(&entity.velocity);
 
         let lower_x = trans.translation.x - radius;
         let upper_x = trans.translation.x + radius;
@@ -100,16 +99,16 @@ pub fn constrain_particle_in_window(
         let upper_y = trans.translation.y + radius;
         if upper_y > height {
             entity.velocity.y = -1. * entity.velocity.y.abs() * dampening;
-            trans.translation.y = height - radius;
-        } else if lower_y < 0.0 {
+            trans.translation.y = new_y_pos;
+        } else if lower_y < -height {
             entity.velocity.y = entity.velocity.y.abs() * dampening;
-            trans.translation.y = radius;
+            trans.translation.y = -new_y_pos;
         }
         if upper_x > width {
             entity.velocity.x = entity.velocity.x.abs() * -1. * dampening;
-            trans.translation.x = width - radius;
-        } else if lower_x < 0.0 {
-            trans.translation.x = radius;
+            trans.translation.x = new_x_pos;
+        } else if lower_x < -width {
+            trans.translation.x = -new_x_pos;
             entity.velocity.x = entity.velocity.x.abs() * dampening;
         }
     }

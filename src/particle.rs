@@ -37,8 +37,8 @@ pub fn spawn_particle(
     for _ in 0..amount
     {
         let (hue, sat, li) = heatmap_color(0.);
-        let random_x = random::<f32>() * window.width();
-        let random_y = random::<f32>() * window.height();
+        let random_x = random::<f32>() * window.width() - window.width() / 2.0;
+        let random_y = random::<f32>() * window.height() - window.height() / 2.0;
         let entity = ParticleEntity {
             original_radius: radius,
             ..default()

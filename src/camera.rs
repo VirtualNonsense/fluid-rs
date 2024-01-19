@@ -1,5 +1,8 @@
 use bevy::app::{App, Plugin, Startup};
-use bevy::prelude::{Camera2dBundle, Commands, default, Query, Transform, Window, With};
+use bevy::core_pipeline::bloom::BloomSettings;
+
+use bevy::prelude::{Camera, Camera2dBundle, Commands, default, Query, Window, With};
+
 use bevy::window::PrimaryWindow;
 
 pub struct CameraPlugin;
@@ -10,11 +13,19 @@ impl Plugin for CameraPlugin {
     }
 }
 
-pub fn spawn_camera(mut commands: Commands, window_query: Query<&Window, With<PrimaryWindow>>) {
-    let window = window_query.get_single().unwrap();
-
-    commands.spawn(Camera2dBundle {
-        transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.0),
-        ..default()
-    });
+pub fn spawn_camera(mut commands: Commands) {
+    commands
+        .spawn(Camera2dBundle {
+            camera: Camera {
+                hdr: true,
+                ..default()
+            },
+            ..default()
+        })
+        .insert(BloomSettings {
+            intensity: 0.4,
+            high_pass_frequency: 0.8,
+            low_frequency_boost: 0.8,
+            ..default()
+        });
 }
