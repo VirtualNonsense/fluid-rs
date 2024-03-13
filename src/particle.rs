@@ -25,6 +25,13 @@ fn heatmap_color(value: f32) -> (f32, f32, f32) {
     (hue, saturation, light)
 }
 
+
+pub enum SpawnSetting {
+    Random,
+    GridSpawn(f32),
+}
+
+
 pub fn spawn_particle(
     mut commands: Commands,
     window_query: Query<&Window, With<PrimaryWindow>>,
@@ -32,28 +39,65 @@ pub fn spawn_particle(
     mut materials: ResMut<Assets<ColorMaterial>>,
     amount: u64,
     radius: f32,
+    spawn_setting: SpawnSetting,
 ) {
     let window = window_query.get_single().unwrap();
-    for _ in 0..amount
-    {
-        let (hue, sat, li) = heatmap_color(0.);
-        let random_x = random::<f32>() * window.width() - window.width() / 2.0;
-        let random_y = random::<f32>() * window.height() - window.height() / 2.0;
-        let entity = ParticleEntity {
-            original_radius: radius,
-            ..default()
-        };
-        let b = MaterialMesh2dBundle {
-            mesh: meshes.add(shape::Circle::new(radius).into()).into(),
-            material: materials.add(ColorMaterial::from(Color::hsl(hue, sat, li))),
-            transform: Transform::from_translation(Vec3::new(random_x, random_y, 0.)),
-            ..default()
-        };
+    let width = window.width();
+    let height = window.height();
+    match spawn_setting {
+        SpawnSetting::Random => {
+            for _ in 0..amount
+            {
+                let (hue, sat, li) = heatmap_color(0.);
+                let random_x = random::<f32>() * width - width / 2.0;
+                let random_y = random::<f32>() * height - height / 2.0;
+                let entity = ParticleEntity {
+                    original_radius: radius,
+                    ..default()
+                };
+                let b = MaterialMesh2dBundle {
+                    mesh: meshes.add(shape::Circle::new(radius).into()).into(),
+                    material: materials.add(ColorMaterial::from(Color::hsl(hue, sat, li))),
+                    transform: Transform::from_translation(Vec3::new(random_x, random_y, 0.)),
+                    ..default()
+                };
 
-        commands.spawn((
-            b,
-            entity,
-        ));
+                commands.spawn((
+                    b,
+                    entity,
+                ));
+            }
+        }
+        SpawnSetting::GridSpawn(grid_width) => {
+            let max_x = (amount as f32 / grid_width) as u64;
+            let origin_x = -(max_x as f32) * grid_width;
+            let origin_y = -(max_x as f32) * grid_width;
+            let mut column = 0;
+            let mut row: u64 = 0;
+            for index in 0..amount {
+                let (hue, sat, li) = heatmap_color(0.);
+
+                column = index % max_x;
+                row = index / max_x;
+                let random_x = column as f32 * grid_width + origin_x;
+                let random_y = row as f32 * grid_width + origin_y;
+                let entity = ParticleEntity {
+                    original_radius: radius,
+                    ..default()
+                };
+                let b = MaterialMesh2dBundle {
+                    mesh: meshes.add(shape::Circle::new(radius).into()).into(),
+                    material: materials.add(ColorMaterial::from(Color::hsl(hue, sat, li))),
+                    transform: Transform::from_translation(Vec3::new(random_x, random_y, 0.)),
+                    ..default()
+                };
+
+                commands.spawn((
+                    b,
+                    entity,
+                ));
+            }
+        }
     }
 }
 

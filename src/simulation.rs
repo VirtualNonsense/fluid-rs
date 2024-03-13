@@ -1,7 +1,7 @@
 use bevy::app::App;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use crate::particle::{Particle, spawn_particle, ParticleEntity};
+use crate::particle::{Particle, spawn_particle, ParticleEntity, SpawnSetting};
 use crate::resources::*;
 
 pub struct SimulationPlugin;
@@ -73,6 +73,7 @@ fn handle_simulation_commands(
             materials,
             particle_count,
             particle.radius,
+            SpawnSetting::Random
         );
     }
     let len = sim_state.commands.len();
