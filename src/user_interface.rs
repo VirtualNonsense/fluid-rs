@@ -32,13 +32,14 @@ impl Plugin for UserInterfacePlugin {
 struct UIState {
     show_menu: bool,
     spawn_counter: u64,
+
 }
 
 impl Default for UIState {
     fn default() -> Self {
         Self {
             show_menu: true,
-            spawn_counter: 0,
+            spawn_counter: 1,
         }
     }
 }
@@ -89,6 +90,7 @@ fn draw_ui(
                 }
             };
             if ui.button("Add Particle").clicked() {
+                println!("{}", ui_state.spawn_counter);
                 sim_state.commands.push(SimulationCommands::AddParticle(ui_state.spawn_counter));
             }
             ui.add(egui::Slider::new(&mut ui_state.spawn_counter, 1..=500).text("particles"));
